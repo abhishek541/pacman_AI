@@ -64,26 +64,20 @@ class BFSAgent(Agent):
 
         bestScore = []
         for state, action in successors:
-            if state.isWin() or state.isLose():
+            if state.isWin():
                 return action
             bestScore.append((BFSAgent.bfs(self, state), action))
+        print str(bestScore)
 
         bfs_best = max(bestScore)[0]
         bfs_action = [pair[1] for pair in bestScore if pair[0] == bfs_best]
 
         return bfs_action[0]
-        # if len(bfs_action) > 1:
-        #     return random.choice(bfs_action)
-        # else:
-        #     return bfs_action[0]
 
     # Perform bfs on each state and return best score
     def bfs(self, state):
-        legal = state.getLegalPacmanActions()
-        successors = [(state.generateSuccessor(0, action), action) for action in legal]
-
         path = Queue.Queue()
-        explored = dict()
+        explored = {}
         node = {}
         node['parent'] = None
         node['action'] = None
@@ -91,11 +85,13 @@ class BFSAgent(Agent):
         path.put(node)
 
         best_score = 0
-        bfs_score = []
 
+        nodeNum = 0;
         while not path.empty():
             node = path.get()
             state = node['state']
+            legal = state.getLegalPacmanActions()
+            successors = [(state.generateSuccessor(0, action), action) for action in legal]
             if explored.has_key(state):
                 continue
 
@@ -104,14 +100,18 @@ class BFSAgent(Agent):
                 break
 
             for childState, action in successors:
+                nodeNum = nodeNum + 1
                 if not explored.has_key(childState):
-                    if childState.isWin() or childState.isLose():
-                        return action
-                    sub_node = {}
-                    sub_node['parent'] = node
-                    sub_node['action'] = action
-                    sub_node['state'] = childState
-                    path.put(sub_node)
+                    if childState.isWin():
+                        break;
+                    childNode = {}
+                    childNode['parent'] = node
+                    childNode['action'] = action
+                    childNode['state'] = childState
+                    path.put(childNode)
+
+            if nodeNum >= 50:
+                break
 
         while node['action'] != None:
             score = scoreEvaluation(node['state'])
@@ -133,26 +133,20 @@ class DFSAgent(Agent):
 
         bestScore = []
         for state, action in successors:
-            if state.isWin() or state.isLose():
+            if state.isWin():
                 return action
             bestScore.append((DFSAgent.dfs(self, state), action))
+        print str(bestScore)
 
         dfs_best = max(bestScore)[0]
         dfs_action = [pair[1] for pair in bestScore if pair[0] == dfs_best]
 
-        # if len(dfs_action) > 1:
-        #     return random.choice(dfs_action)
-        # else:
-        #     return dfs_action[0]
         return dfs_action[0]
 
     # Perform dfs on each state and return best score
     def dfs(self, state):
-        legal = state.getLegalPacmanActions()
-        successors = [(state.generateSuccessor(0, action), action) for action in legal]
-
         path = Queue.LifoQueue()
-        explored = dict()
+        explored = {}
         node = {}
         node['parent'] = None
         node['action'] = None
@@ -160,11 +154,14 @@ class DFSAgent(Agent):
         path.put(node)
 
         best_score = 0
-        dfs_score = []
 
+        nodeNum = 0
         while not path.empty():
             node = path.get()
             state = node['state']
+            legal = state.getLegalPacmanActions()
+            successors = [(state.generateSuccessor(0, action), action) for action in legal]
+
             if explored.has_key(state):
                 continue
 
@@ -174,13 +171,17 @@ class DFSAgent(Agent):
 
             for childState, action in successors:
                 if not explored.has_key(childState):
-                    if childState.isWin() or childState.isLose():
-                        return action
-                    sub_node = {}
-                    sub_node['parent'] = node
-                    sub_node['action'] = action
-                    sub_node['state'] = childState
-                    path.put(sub_node)
+                    nodeNum = nodeNum + 1
+                    if childState.isWin():
+                        break
+                    childNode = {}
+                    childNode['parent'] = node
+                    childNode['action'] = action
+                    childNode['state'] = childState
+                    path.put(childNode)
+
+            if nodeNum > 50:
+                break
 
         while node['action'] != None:
             score = scoreEvaluation(node['state'])
@@ -197,4 +198,70 @@ class AStarAgent(Agent):
     # GetAction Function: Called with every frame
     def getAction(self, state):
         # TODO: write A* Algorithm instead of returning Directions.STOP
-        return Directions.STOP
+        legal = state.getLegalPacmanActions()
+        successors = [(state.generateSuccessor(0, action), action) for action in legal]
+
+        bestScore = []
+        for state, action in successors:
+            if state.isWin():
+                return action
+            bestScore.append((AStarAgent.aStar(self, state), action))
+        print str(bestScore)
+
+        astar_best = max(bestScore)[0]
+        astar_action = [pair[1] for pair in bestScore if pair[0] == astar_best]
+
+        return astar_action[0]
+
+    # Perform astar on each state and return best score
+    def aStar(self, state):
+        depth = 0
+
+        path = Queue.PriorityQueue()
+        explored = {}
+        node = {}
+        node['parent'] = None
+        node['action'] = None
+        node['state'] = state
+        node['cost'] = depth
+        node['eval'] = scoreEvaluation(state)
+        path.put(node, node['cost'] + node['eval'])
+
+        best_score = 0
+
+        nodeNum = 0
+        while not path.empty():
+            depth = depth + 1
+            node = path.get()
+            state = node['state']
+            legal = state.getLegalPacmanActions()
+            successors = [(state.generateSuccessor(0, action), action) for action in legal]
+            if explored.has_key(state):
+                continue
+
+            explored[state] = True
+            if state.isWin():
+                break
+
+            for childState, action in successors:
+                if not explored.has_key(childState):
+                    nodeNum = nodeNum + 1
+                    if childState.isWin():
+                        return action
+                    childNode = {}
+                    childNode['parent'] = node
+                    childNode['action'] = action
+                    childNode['state'] = childState
+                    childNode['cost'] = depth
+                    childNode['eval'] = -(scoreEvaluation(childState) - scoreEvaluation(node['state']))
+                    path.put(childNode, childNode['cost'] + childNode['eval'])
+
+            if nodeNum > 50:
+                break
+
+        while node['action'] != None:
+            score = scoreEvaluation(node['state'])
+            best_score = best_score + score
+            node = node['parent']
+
+        return best_score
